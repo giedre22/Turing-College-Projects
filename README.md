@@ -1,2 +1,4 @@
 # Turing-College-Projects
-Here is my portfolio of finished projects during turing college
+
+I have completed the sprints above, please take a look as I see it as a little portfolio of mine :)
+
