@@ -1,0 +1,45 @@
+WITH week_0 AS
+    (SELECT DISTINCT ------------Selecting only the unique valeus to avoid duplicates
+    user_pseudo_id AS user,
+    category,  -------------------Adding Category and Country to avoid duplicating values if the same user use different categories to get more insights on retention via device 
+    subscription_start AS start_date,
+    DATE_TRUNC(subscription_start, WEEK) AS start_week,
+    subscription_end AS end_date,
+    DATE_TRUNC(subscription_end, WEEK) AS end_week
+    FROM `turing_data_analytics.subscriptions`
+    WHERE subscription_start < '2021-02-07' ----making sure I only look at the subscriptions that started before 2021-02-07
+    ORDER BY subscription_start),
+
+
+    Retention AS (SELECT
+    start_week AS cohort,
+    category,
+    COUNT(user) AS week_0, ---I am calculating the week_0 user pool retention by categorizing it into diffirent devices
+    
+    COUNT(IF(DATE_DIFF(end_week, start_week, WEEK) > 0 OR end_week IS NULL, user, NULL)) AS week_1, --Calculating 1 week after the subscription week 0
+    COUNT(IF((DATE_DIFF(end_week, start_week, WEEK) > 1 OR end_week IS NULL) AND
+        start_week < (SELECT DATETIME_SUB(MAX(start_week), INTERVAL 0 WEEK) FROM week_0), user, NULL)) AS week_2, --Calculating 2 week after the subscription week 0 
+    COUNT(IF((DATE_DIFF(end_week, start_week, WEEK) > 2 OR end_week IS NULL) AND
+        start_week < (SELECT DATETIME_SUB(MAX(start_week), INTERVAL 1 WEEK) FROM week_0), user, NULL)) AS week_3,
+    COUNT(IF((DATE_DIFF(end_week, start_week, WEEK) > 3 OR end_week IS NULL) AND
+        start_week < (SELECT DATETIME_SUB(MAX(start_week), INTERVAL 2 WEEK) FROM week_0), user, NULL)) AS week_4,
+    COUNT(IF((DATE_DIFF(end_week, start_week, WEEK) > 4 OR end_week IS NULL) AND
+        start_week < (SELECT DATETIME_SUB(MAX(start_week), INTERVAL 3 WEEK) FROM week_0), user, NULL)) AS week_5,
+    COUNT(IF((DATE_DIFF(end_week, start_week, WEEK) > 5 OR end_week IS NULL) AND
+        start_week < (SELECT DATETIME_SUB(MAX(start_week), INTERVAL 4 WEEK) FROM week_0), user, NULL)) AS week_6
+
+    FROM week_0
+    GROUP BY category, cohort --I am grouping category and the cohort week to make sure I get the right calculation of users per the specific week based on the device category 
+    ORDER BY cohort) --Making sure that the order goes by the cohort start week ASC 
+
+SELECT
+cohort,
+category,
+week_0/week_0 AS week_0, --Calculating the retention rate to the cohort groups based on the category of device and the cohort group 
+ROUND(week_1/week_0, 3) AS week_1, 
+ROUND(week_2/week_0, 3) AS week_2,
+ROUND(week_3/week_0, 3) AS week_3,
+ROUND(week_4/week_0, 3) AS week_4,
+ROUND(week_5/week_0, 3) AS week_5,
+ROUND(week_6/week_0, 3) AS week_6
+FROM retention;
